@@ -5,6 +5,7 @@
 // The MIT License
 //
 // Copyright (C) 2014-2017  beltex <https://beltex.github.io>
+// Copyright (c) 2022  kippdunn <https://github.com/kippdunn>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -213,7 +214,7 @@ class SMCKitTests: XCTestCase {
             
             // Getting these values to cross ref
             var prop = IORegistryEntryCreateCFProperty(
-                service, "IsCharging" as CFString!,
+                service, "IsCharging" as CFString?,
                 kCFAllocatorDefault,
                 0
             )
@@ -221,7 +222,7 @@ class SMCKitTests: XCTestCase {
             ASPCharging = prop?.takeUnretainedValue() as! Bool
             
             prop = IORegistryEntryCreateCFProperty(
-                service, "FullyCharged" as CFString!,
+                service, "FullyCharged" as CFString?,
                 kCFAllocatorDefault,
                 0
             )
@@ -348,7 +349,7 @@ class SMCKitTests: XCTestCase {
             name = String(cString: cString)
         }
 
-        ptr.deallocate(capacity: 1)
+        ptr.deallocate()
 
         return name
     }

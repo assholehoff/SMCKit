@@ -5,6 +5,7 @@
 // The MIT License
 //
 // Copyright (C) 2014-2017  beltex <https://beltex.github.io>
+// Copyright (c) 2022  kippdunn <https://github.com/kippdunn>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -64,6 +65,18 @@ extension UInt32 {
     }
 }
 
+extension Float {
+
+    init(fromBytes bytes: (UInt8, UInt8, UInt8, UInt8)) {
+        let byte0 = UInt32(bytes.3) << 24
+        let byte1 = UInt32(bytes.2) << 16
+        let byte2 = UInt32(bytes.1) << 8
+        let byte3 = UInt32(bytes.0)
+        let newBytes = byte0 | byte1 | byte2 | byte3
+        self = Float.init(bitPattern: newBytes)
+    }
+}
+
 extension Bool {
 
     init(fromByte byte: UInt8) {
@@ -96,7 +109,7 @@ extension Double {
 public extension FourCharCode {
 
     init(fromString str: String) {
-        precondition(str.characters.count == 4)
+        precondition(str.count == 4)
 
         self = str.utf8.reduce(0) { sum, character in
             return sum << 8 | UInt32(character)
@@ -783,5 +796,37 @@ extension SMCKit {
                            isBatteryPowered: isBatteryPowered,
                            isBatteryOk: isBatteryOk,
                            isCharging: isCharging)
+    }
+}
+
+//------------------------------------------------------------------------------
+// KIPP: Current power usage and draw
+//------------------------------------------------------------------------------
+public struct powerUsage {
+    public let InVoltage: Float
+    public let InAmperage: Float
+    public let SystemWattage: Float
+}
+
+extension SMCKit {
+
+    public static func powerUsageInformation() throws -> powerUsage {
+      let voltCode: FourCharCode? = FourCharCode.init(fromStaticString:"VD0R")
+      let ampCode: FourCharCode? = FourCharCode.init(fromStaticString:"ID0R")
+      let total: FourCharCode? = FourCharCode.init(fromStaticString:"PSTR")
+
+      let voltKey = SMCKey(code: voltCode!, info: DataTypes.UInt32)
+      let ampKey = SMCKey(code: ampCode!, info: DataTypes.UInt32)
+      let wattKey = SMCKey(code: total!, info: DataTypes.UInt32)
+
+      let voltData = try readData(voltKey)
+      let ampData = try readData(ampKey)
+      let wattData = try readData(wattKey)
+
+      let volts: Float = Float(fromBytes: (voltData.0, voltData.1, voltData.2, voltData.3))
+      let amps: Float = Float(fromBytes: (ampData.0, ampData.1, ampData.2, ampData.3))
+      let watts: Float = Float(fromBytes: (wattData.0, wattData.1, wattData.2, wattData.3))
+
+      return powerUsage(InVoltage: volts, InAmperage: amps, SystemWattage: watts)
     }
 }
